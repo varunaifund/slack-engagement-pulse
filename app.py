@@ -18,7 +18,7 @@ from engagement_analyzer import EngagementAnalyzer
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'engagement-pulse-secret-key'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global variables

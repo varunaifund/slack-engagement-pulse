@@ -1,139 +1,298 @@
-# Slack Employee Engagement Pulse 📊
+<div align="center">
 
-A comprehensive AI-powered sentiment analysis system that monitors team engagement and mood across Slack channels. Features both a web application interface and CLI tools for analyzing team communication patterns, detecting burnout risks, and generating actionable insights.
+# Slack Engagement Pulse
 
-## ✨ Features
+### AI-powered Slack analytics that detects team burnout before it becomes a problem.
 
-- **🌐 Live Web Application**: Real-time dashboard with one-click report generation
-- **🧠 AI-Powered Analysis**: GPT-based sentiment analysis for nuanced understanding
-- **🔐 Privacy-First**: Analyzes sentiment without storing personal messages or user identities
-- **📊 Comprehensive Analytics**: Tracks sentiment, engagement, activity patterns, and burnout indicators
-- **⚠️ Burnout Detection**: Identifies concerning patterns and provides actionable recommendations
-- **📈 Interactive Dashboard**: Beautiful web interface with real-time progress tracking
-- **🔄 Multiple Export Formats**: JSON and HTML reports with downloadable files
-- **⚙️ Configurable**: Flexible configuration via JSON files and environment variables
-- **🗄️ Data Retention**: SQLite storage with automatic cleanup of old data
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Slack](https://img.shields.io/badge/Slack_API-SDK_3.x-4A154B?style=flat-square&logo=slack&logoColor=white)](https://api.slack.com/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--3.5-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 
-## 🚀 Quick Start
+</div>
 
-### 1. Prerequisites
+---
 
-- Python 3.8+
-- Slack Bot Token with appropriate permissions
-- OpenAI API key for GPT sentiment analysis
-- Required OAuth scopes: `channels:history`, `channels:read`, `users:read`, `reactions:read`
+## Overview
 
-### 2. Installation
+Slack Engagement Pulse monitors team communication patterns across Slack channels and surfaces early warning signals for burnout, disengagement, and morale decline — all without storing any personal data or message content.
 
-```bash
-# Clone or download the project
-cd project-6
+It combines **GPT-3.5 sentiment analysis** with VADER/TextBlob fallback, emoji reaction scoring, engagement trend calculations, and a configurable burnout risk model. Results are surfaced through a **real-time Flask web dashboard** or a **CLI tool**, with reports exported as HTML or JSON.
 
-# Install dependencies
-pip install -r requirements.txt
+---
 
-# Set up your environment variables
-# Create .env file and add:
-SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-OPENAI_API_KEY=sk-your-openai-api-key
+## Features
+
+| Category | Capability |
+|---|---|
+| **AI Analysis** | GPT-3.5-turbo sentiment analysis with workplace-aware prompting; automatic fallback to VADER + TextBlob |
+| **Engagement Metrics** | Daily scores weighted across message volume, reactions, emoji usage, and active-hour spread |
+| **Burnout Detection** | Multi-factor risk model scoring consecutive negative days, sentiment decline, engagement drops, and message inactivity |
+| **Trend Analysis** | Linear trend direction and percentage change per channel over configurable windows |
+| **Activity Patterns** | Peak hour and peak day detection across all monitored channels |
+| **Web Dashboard** | Flask + Socket.IO real-time dashboard with live progress updates during analysis |
+| **Reports** | JSON and HTML report export with per-channel breakdowns and actionable recommendations |
+| **Data Storage** | SQLite with automatic retention-based cleanup; no raw messages or user identities stored |
+| **Privacy-First** | Only aggregated, anonymized metrics are persisted |
+| **CLI Support** | Full-featured command-line interface for scripted or scheduled runs |
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         Entry Points                             │
+│                 app.py (web)  │  run.py (CLI)                    │
+└──────────────────┬────────────┴──────────────┬───────────────────┘
+                   │                           │
+                   ▼                           ▼
+        ┌─────────────────────────────────────────────┐
+        │            EngagementAnalyzer               │
+        │         (orchestrates all components)       │
+        └────┬──────────┬──────────┬──────────┬───────┘
+             │          │          │          │
+             ▼          ▼          ▼          ▼
+   ┌──────────────┐ ┌─────────┐ ┌──────────┐ ┌──────────────┐
+   │ SlackData    │ │Sentiment│ │Engagement│ │  Burnout     │
+   │ Collector    │ │Analyzer │ │ Tracker  │ │  Detector    │
+   │              │ │         │ │          │ │              │
+   │ Slack SDK    │ │ GPT-3.5 │ │ Pandas   │ │ Risk Scoring │
+   │ Paginated    │ │ VADER   │ │ Trends   │ │ Thresholds   │
+   │ history +    │ │ TextBlob│ │ Patterns │ │ Recommends   │
+   │ reactions    │ │ Emojis  │ │          │ │              │
+   └──────────────┘ └─────────┘ └──────────┘ └──────────────┘
+             │                                       │
+             ▼                                       ▼
+   ┌──────────────┐                       ┌──────────────────┐
+   │ DataStorage  │                       │ ReportGenerator  │
+   │              │                       │                  │
+   │ SQLite (5    │                       │ JSON / HTML      │
+   │ tables)      │                       │ reports          │
+   │ Auto-cleanup │                       │                  │
+   └──────────────┘                       └──────────────────┘
 ```
 
-### 3. Configuration
+**Data flow:** Slack messages are fetched and immediately analyzed — raw text is never written to disk. Only the resulting numeric scores, trends, and risk flags are stored in SQLite.
 
-Edit `config.json` to configure your monitored channels and settings:
+---
+
+## Tech Stack
+
+- **Backend:** Python 3.8+, Flask 2.3, Flask-SocketIO
+- **Slack:** `slack-sdk` 3.x — conversations history, reactions, channel listing
+- **AI/NLP:** OpenAI GPT-3.5-turbo, VADER Sentiment, TextBlob
+- **Data:** SQLite via stdlib `sqlite3`, Pandas for trend calculations
+- **Realtime:** Socket.IO for live progress streaming to the dashboard
+- **Reporting:** Plotly (charts), custom HTML/JSON report templates
+- **Config:** `python-dotenv` + JSON config file with env-variable overrides
+
+---
+
+## Prerequisites
+
+- Python 3.8+
+- A Slack Bot Token with these OAuth scopes:
+  - `channels:history`
+  - `channels:read`
+  - `reactions:read`
+  - `users:read`
+- An OpenAI API key (optional — the system falls back to VADER if not provided)
+
+---
+
+## Installation
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/slack-engagement-pulse.git
+cd slack-engagement-pulse
+
+# 2. Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set up environment variables
+cp .env.example .env
+# Edit .env and add your keys:
+#   SLACK_BOT_TOKEN=xoxb-...
+#   OPENAI_API_KEY=sk-...
+#   FLASK_SECRET_KEY=your-random-secret
+
+# 5. Set up configuration
+cp config.example.json config.json
+# Edit config.json and set your monitored channels
+```
+
+---
+
+## Configuration
+
+`config.json` controls which channels are monitored and all analysis parameters:
 
 ```json
 {
-  "monitored_channels": ["#general", "#random", "#dev-team"],
+  "monitored_channels": ["#general", "#engineering", "#product"],
   "analysis_days": 7,
   "burnout_threshold": -0.3,
-  "min_messages_per_day": 5
+  "consecutive_negative_days": 3,
+  "engagement_drop_threshold": 0.5,
+  "database": {
+    "path": "./data/engagement.db",
+    "retention_days": 30
+  },
+  "reports": {
+    "formats": ["json", "html"]
+  }
 }
 ```
 
-### 4. Run the Web Application
+All settings can also be overridden via environment variables:
+
+| Variable | Description |
+|---|---|
+| `SLACK_BOT_TOKEN` | Slack bot OAuth token (required) |
+| `OPENAI_API_KEY` | OpenAI key for GPT analysis (optional) |
+| `FLASK_SECRET_KEY` | Flask session secret key |
+| `ANALYSIS_DAYS` | Override default analysis window |
+| `BURNOUT_THRESHOLD` | Sentiment score below which burnout is flagged |
+| `MONITORED_CHANNELS` | Comma-separated channel list |
+| `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, or `ERROR` |
+
+---
+
+## Usage
+
+### Web Dashboard
 
 ```bash
-# Start the live web application
 python app.py
-
-# Open your browser to http://localhost:5000
-# Click "Generate Report" to analyze team engagement
+# Open http://localhost:5000
 ```
 
-### 5. Alternative CLI Usage
+The dashboard provides:
+- **System status panel** — Slack connection health, GPT availability, database stats
+- **One-click analysis** — choose 7, 14, or 30-day windows
+- **Live progress bar** — real-time Socket.IO updates as each pipeline stage completes
+- **Results view** — sentiment scores, engagement metrics, burnout alerts, channel breakdown
+- **Report management** — download or view generated HTML/JSON reports in-browser
+
+### CLI
 
 ```bash
-# Basic CLI analysis
-python src/engagement_analyzer.py
+# Run full analysis with default settings
+python run.py
 
-# Test Slack connection
-python src/engagement_analyzer.py --test-connection
+# Analyze the last 14 days
+python run.py --days 14
 
-# Analyze specific number of days
-python src/engagement_analyzer.py --days 14
+# Test Slack API connectivity only
+python run.py --test-connection
+
+# Run without generating reports
+python run.py --no-reports
+
+# View database statistics
+python run.py --db-stats
+
+# Use a custom config file
+python run.py --config /path/to/config.json
 ```
 
-## 🛡️ Privacy & Security
-
-- **No Personal Data**: Only aggregated, anonymized metrics are stored
-- **Message Content**: Original message text is never persisted
-- **User Privacy**: No usernames or personal identifiers are stored
-- **Data Retention**: Automatic cleanup of old data based on retention policy
-- **Local Storage**: All data stays on your infrastructure
-
-## 🌐 Web Application Features
-
-The live web application provides:
-
-- **Real-Time Status Monitoring**: Dashboard showing Slack connection, GPT analyzer, and database status
-- **One-Click Analysis**: Generate reports for 7, 14, or 30 days with a single button click
-- **Live Progress Updates**: Real-time WebSocket updates during analysis with progress bars
-- **Report Management**: View and download generated HTML and JSON reports
-- **Mobile Responsive**: Works seamlessly on desktop and mobile devices
-- **Interactive Metrics**: Visual display of sentiment scores, engagement levels, and burnout alerts
-
-## 🤖 AI-Powered Sentiment Analysis
-
-- **GPT Integration**: Uses OpenAI's GPT-3.5-turbo for sophisticated sentiment understanding
-- **Context-Aware**: Analyzes workplace communication nuances and context
-- **Fallback Support**: Automatically falls back to VADER sentiment analysis if GPT is unavailable
-- **Emotional Intelligence**: Detects subtle emotional patterns in team communications
-
-## 📂 Project Structure
+### Example CLI output
 
 ```
-project-6/
-├── app.py                       # Flask web application
+============================================================
+SLACK EMPLOYEE ENGAGEMENT PULSE - SUMMARY
+============================================================
+Analysis Date: 2025-03-20
+Days Analyzed: 7
+Total Messages: 342
+Channels: #general, #engineering, #product
+
+Overall Sentiment: 0.187
+Overall Engagement: 0.523
+
+Sentiment Breakdown:
+  Positive: 61.4%
+  Neutral:  28.9%
+  Negative:  9.7%
+
+No burnout risks detected
+============================================================
+
+Reports generated:
+  - reports/engagement_report_20250320_143022.json
+  - reports/engagement_dashboard_20250320_143022.html
+```
+
+---
+
+## Project Structure
+
+```
+slack-engagement-pulse/
+├── app.py                        # Flask web application + Socket.IO server
+├── run.py                        # CLI entry point
+├── config.example.json           # Configuration template
+├── requirements.txt
+├── .env.example                  # Environment variable template
 ├── src/
-│   ├── engagement_analyzer.py   # Main CLI application
-│   ├── slack_data_collector.py  # Slack API integration
-│   ├── sentiment_analyzer.py    # Text & emoji sentiment analysis
-│   ├── gpt_sentiment_analyzer.py # GPT-powered sentiment analysis
-│   ├── engagement_tracker.py    # Engagement metrics calculation
-│   ├── burnout_detector.py      # Burnout pattern detection
-│   ├── report_generator.py      # Report generation
-│   ├── data_storage.py          # SQLite database operations
-│   └── config_manager.py        # Configuration management
-├── templates/
-│   └── dashboard.html           # Web application frontend
-├── data/                        # Database files (auto-created)
-├── logs/                        # Application logs (auto-created)
-├── reports/                     # Generated reports (auto-created)
-├── config.json                  # Configuration file
-├── requirements.txt             # Python dependencies
-├── .env                         # Environment variables (API keys)
-└── README.md                   # This file
+│   ├── engagement_analyzer.py    # Main orchestrator — wires all components together
+│   ├── slack_data_collector.py   # Slack API — channel history, reactions, pagination
+│   ├── sentiment_analyzer.py     # Text + emoji sentiment with GPT/VADER routing
+│   ├── gpt_sentiment_analyzer.py # OpenAI GPT-3.5 sentiment analysis with fallback parsing
+│   ├── engagement_tracker.py     # Daily metrics, trend calculation, activity patterns
+│   ├── burnout_detector.py       # Multi-factor burnout risk scoring + recommendations
+│   ├── report_generator.py       # HTML and JSON report generation
+│   ├── data_storage.py           # SQLite persistence + retention-based cleanup
+│   └── config_manager.py         # Config loading, env overrides, validation
+├── data/                         # SQLite database (auto-created, gitignored)
+├── logs/                         # Application logs (auto-created, gitignored)
+└── reports/                      # Generated reports (auto-created, gitignored)
 ```
 
-## 🔧 API Endpoints
+---
 
-The web application exposes several API endpoints:
+## API Reference
 
-- `GET /` - Main dashboard interface
-- `GET /api/status` - System status and health check
-- `POST /api/analyze` - Start engagement analysis
-- `GET /api/results` - Get latest analysis results
-- `GET /api/reports` - List available reports
-- `GET /api/reports/<filename>` - Download specific report
-- `GET /api/reports/<filename>/view` - View report in browser
+The Flask application exposes a REST + WebSocket API:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | Web dashboard |
+| `GET` | `/api/status` | System health — Slack connection, analyzer state, DB stats |
+| `POST` | `/api/analyze` | Start analysis (`{"days": 7}`) |
+| `GET` | `/api/results` | Latest analysis results |
+| `GET` | `/api/reports` | List generated reports |
+| `GET` | `/api/reports/<filename>` | Download a report file |
+| `GET` | `/api/reports/<filename>/view` | View report in browser |
+
+**WebSocket events** (Socket.IO):
+
+| Event | Direction | Payload |
+|---|---|---|
+| `connected` | server → client | Connection confirmation |
+| `analysis_progress` | server → client | `{stage, message, progress, results?}` |
+
+---
+
+## Privacy & Security
+
+- **No raw message storage** — message text is analyzed in-memory and immediately discarded
+- **No user identities** — usernames and user IDs are never stored
+- **Aggregated only** — SQLite stores only numeric scores, counts, and trend directions per channel per day
+- **Local by default** — all data stays on your own infrastructure
+- **Secret management** — all credentials loaded from environment variables via `.env`; `config.json` and `.env` are gitignored
+
+---
+
+## License
+
+MIT

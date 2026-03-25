@@ -21,7 +21,7 @@ class ConfigManager:
     def load_config(self) -> Dict[str, Any]:
         # Default configuration
         default_config = {
-            "monitored_channels": ["#general", "#random", "#techno-dome-program"],
+            "monitored_channels": ["#general", "#random"],
             "analysis_days": 7,
             "burnout_threshold": -0.3,
             "min_messages_per_day": 5,

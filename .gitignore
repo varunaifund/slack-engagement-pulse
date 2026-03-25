@@ -2,7 +2,9 @@
 .env
 .env.local
 .env.production
+config.json
 config.local.json
+!config.example.json
 
 # Data and logs
 /data/
